@@ -1,0 +1,10 @@
+Given a tweet. Strign tweet
+Break it into dependencies
+Extract subjects and objects
+	Of those, tag the nounds, verbs, adjectives and adverbs
+	Pass them to Analysis with their tags
+	Run combinations of analysis till we find x many categories for it
+	(Some words will be tagged wrong! Might need to search word net or a dictionary for a better tag)
+
+
+If wordnet can't find wordd, then use DBPedia?
