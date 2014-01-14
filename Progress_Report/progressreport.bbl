@@ -1,0 +1,40 @@
+\begin{thebibliography}{1}
+
+\bibitem{sferik}
+{Ruby Twitter wrapper}.
+\newblock \url{https://github.com/sferik/twitter/}.
+\newblock ACCESSED: 13/11/13.
+
+\bibitem{twitterstat}
+{Twitter Statistics}.
+\newblock \url{http://www.statisticbrain.com/twitter-statistics/}.
+\newblock ACCESSED: 12/11/13.
+
+\bibitem{BravoMarquezF2013Combining}
+Felipe Bravo-Marquez, Marcelo Mendoza, and Barbara Poblete.
+\newblock Combining strengths, emotions and polarities for boosting twitter
+  sentiment analysis.
+\newblock Association for Computing Machinery, 2013.
+
+\bibitem{bidirectionaltrawling}
+M.~Gjoka, M.~Kurant, C.T. Butts, and A.~Markopoulou.
+\newblock Practical recommendations on crawling online social networks.
+\newblock {\em Selected Areas in Communications, IEEE Journal on},
+  29(9):1872--1892, 2011.
+
+\bibitem{hashtagwearefollowers}
+C.~Hart.
+\newblock Practical recommendations on crawling online social networks.
+\newblock Technical report, Ursinus College, 2013.
+
+\bibitem{twitterservers}
+R.~Miller.
+\newblock Twitter adding more data center space again.
+\newblock {\em Data Center Knowledge}, 2011.
+
+\bibitem{MHRWunidirectional}
+Tianyi Wang, Yang Chen, Zengbin Zhang, Peng Sun, Beixing Deng, and Xing Li.
+\newblock Unbiased sampling in directed social graph.
+\newblock {\em SIGCOMM Comput. Commun. Rev.}, 40(4):401--402, August 2010.
+
+\end{thebibliography}
