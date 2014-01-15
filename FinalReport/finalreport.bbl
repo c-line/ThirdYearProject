@@ -1,0 +1,19 @@
+\begin{thebibliography}{1}
+
+\bibitem{combiningstrengthsemotionspolarities}
+Felipe Bravo-Marquez, Marcelo Mendoza, and Barbara Poblete.
+\newblock Combining strengths, emotions and polarities for boosting twitter
+  sentiment analysis.
+\newblock In {\em Proceedings of the Second International Workshop on Issues of
+  Sentiment Discovery and Opinion Mining}, WISDOM '13, pages 2:1--2:9, New
+  York, NY, USA, 2013. ACM.
+
+\bibitem{phraselevelsentimentanalysis}
+Theresa Wilson, Janyce Wiebe, and Paul Hoffmann.
+\newblock Recognizing contextual polarity in phrase-level sentiment analysis.
+\newblock In {\em Proceedings of the Conference on Human Language Technology
+  and Empirical Methods in Natural Language Processing}, HLT '05, pages
+  347--354, Stroudsburg, PA, USA, 2005. Association for Computational
+  Linguistics.
+
+\end{thebibliography}

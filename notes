@@ -1,7 +1,0 @@
-/*
-iterate through tweets
-get keywords
-store in database (store next to tweet it's from and in keywords table with it's definitions as separate rows and it's grammar tag)
-
-
-*/

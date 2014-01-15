@@ -1,0 +1,77 @@
+\documentclass[11pt]{report}
+
+\usepackage{fullpage, url, graphicx, geometry, setspace}
+\newgeometry{left=0.8in, right=0.8in, bottom=4cm, top=0.9in}
+\onehalfspacing
+
+\begin{document}
+
+\thispagestyle{empty}
+
+	\begin{center}
+		\includegraphics[scale = 1.9]{./images/WarwickCrest.pdf}
+	\end{center}
+	\vspace{8mm}
+	\begin{center}
+		\bf {\Large Data mining Twitter for analysis and user comparisons}
+	\end{center}
+	\vspace{5mm}
+	\begin{center}
+		\bf {\Large CS310 - Third Year Project Final Report}
+	\end{center}
+	\vspace{20mm}
+	\begin{center}
+		{\bf Caroline Player\\
+		1112108}
+	\end{center}
+	\vspace{20mm}
+	\begin{center}
+		{\bf Department of Computer Science\\University of Warwick\\\vspace{6mm}
+		2013-2014}
+	\end{center}
+
+\pagenumbering{roman}
+
+\tableofcontents
+
+\listoffigures
+\newpage
+
+\setcounter{page}{1}
+\pagenumbering{arabic}
+
+
+\chapter{Introduction}
+The project documented in this report is about extracting meaning from data made available by the social media Twitter. This report will demonstrate the research which lead to what was ultimately built and the system requirements that are justified by the research, followed by how the project was designed, implemented and managed, an evaluation of the success of the project and finally a conclusion. This chapter outlines the aims and motivations of the project.
+%Learn the difference of who and whom
+\input{introduction.tex}
+
+\chapter{Research}
+This chapter documents the research that was undertaken for this project. The research shows similar and related work that was used to invistigate the area of unbiased sampling of directed and undirected graphs, sentiment analysis and speech. 
+\input{research.tex}
+
+\chapter{System Requirements}
+\input{systemrequirements.tex}
+
+\chapter{System Design}
+\input{design.tex}
+
+\chapter{Implementation}
+\input{implementation.tex}
+
+\chapter{Testing}
+
+\chapter{Project Management}
+\input{projectmanagement.tex}
+
+\chapter{Evaluation}
+
+\chapter{Conclusion}
+
+
+
+\bibliography{bibliography}
+\bibliographystyle{plain}
+
+\end{document}
+

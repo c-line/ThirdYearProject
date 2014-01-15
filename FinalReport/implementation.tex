@@ -1,0 +1,32 @@
+\section{Data Collection}
+\subsection{Tools}
+The tools used for this were the Twitter API which provides HTTP requests that return JSON objects.
+\subsection{Joshua}
+When a certain amount of data has been collected from Twitter, a waiting time must be obeyed before you can continue collecting more data. The amount of data that can be collected can be seen in appendix (DO AN APPENDIX ON THE TWITTER API)
+
+\section{Analysis}
+
+
+\subsection{Twitter Content}
+Before users could be given a string which represents whether or not they are interested in certain categories, the categories need to be defined. Determining the categories could not be hardcoded because this would not encapsulate all the topics discussed on Twitter, and lead to a misrepresentation about what is presented. Therefore, what was needed was a system to analyse the text of tweets, and dynamically create the categories, creating data driven results. The following section discusses how the design discussed in Chapter~\ref{chap:design}, for categorising the text in tweets was implemented.
+\subsubsection{Lexical Parsing}
+The standford parser takes in any amount of text, and tokenises the words. Relationships between words are formed and a tree of the sentence structure can be produced. 
+\subsubsection{Categorising content}
+WordNet's database of words is limited, and therefore, before a word found in a tweet can be used for categorising, we have to clean it of punctuation, but most importantly, the stem of the word needs to be used. For example, `Flowers' would raise an exception if searched for in the WordNet dictionary, because it is a plural. So all words being used in analysis are first sent to a method to have the stem of the word found, and the stem is returned and used. This is still subject to errors as often the stemmer provided by the WordNet API returns latin words whose definitions are not stored in it's dictionary. Therefore sanity checks are in place to iterate through all the possible stems of a word and return the first word which applicable that has a definition. 
+WordNet hypernym relation.
+\subsubsection{Tools}
+%not necessarily keeping the strcture of this chapter like this, however this is a way of keeping note of the tools used so far in development
+\begin{itemize}
+\item {\bf Alchemy API} Has restrictions of 1,000 calls a day and supports a maximum of 5 concurrent requests.API Notes:
+
+Calls to TextGetRankedKeywords should be made using HTTP POST.
+HTTP POST calls should include the Content-Type header: application/x-www-form-urlencoded
+Posted text documents can be a maximum of 150 kilobytes. Larger documents will result in a "content-exceeds-size-limit" error response.
+Language detection is performed on the retrieved document before attempting keyword extraction. A minimum of 15 characters of text must exist within the requested HTTP document to perform language detection.
+Documents containing less than 15 characters of text are assumed to be English-language content.
+Keyword extraction is currently supported for all languages listed on the language support page. Other non-supported language submissions will be rejected and an error response returned.
+Enabling keyword-level sentiment analysis results in one additional transaction utilized against your daily API limit. Keyword-level sentiment analysis is currently provided for both English and German-language content.
+\end{itemize}
+
+\subsection{User Sentiment Analysis}
+%This discusses whether an individual user gets a 1 or 0 for the categories determined in the "Twitter Content section"
