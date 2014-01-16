@@ -58,7 +58,7 @@ class LexParserObj {
           }
 
           try {
-            conn = DriverManager.getConnection("jdbc:mysql://localhost/test?user=root&password=");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost/thirdyearproject?user=root&password=");
           }catch (SQLException ex) {
           // handle any errors
           System.out.println("SQLException: " + ex.getMessage());
@@ -139,16 +139,18 @@ class LexParserObj {
     // This option shows parsing a list of correctly tokenized words
     //String[] sent = { "This", "is", "an", "easy", "sentence", "." };
 
-    String[] words = sentence.split(" ");
-
-    List<String> wordsAndTags = new ArrayList<String>();
-   
     
+    String[] words = sentence.split(" ");
+     System.out.println("sentence: " + sentence);
+
+    List<String> wordsAndTags = new ArrayList<String>(); 
+
+
 
     List<CoreLabel> rawWords = Sentence.toCoreLabelList(words);
     Tree parse = lp.apply(rawWords);
-    parse.pennPrint();
-
+   // parse.pennPrint();
+    //System.out.println(parse.toString());
     HashMap grammarHM = new HashMap();
 
 
@@ -158,17 +160,19 @@ class LexParserObj {
     String p;
     String n;
     Collection<TreeGraphNode> nodes = tweet.getNodes();
-    //System.out.println(tweet.toString());
+    
 
    
-
-
-
     TreebankLanguagePack tlp = new PennTreebankLanguagePack();
     GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
     GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
     List<TypedDependency> tdl = gs.typedDependenciesCCprocessed();
-    System.out.println(tdl);
+    //System.out.println(tdl);
+
+    // Iterator ii = tdl.iterator();
+    // while (ii.hasNext())  {
+    //   System.out.println(ii.next().toString());
+    // }
 
      for(Iterator<TreeGraphNode> i = nodes.iterator(); i.hasNext();)  {
       node = i.next();
@@ -183,20 +187,21 @@ class LexParserObj {
      //where node is a leaf, it's parent is it's label
     }
 
+    System.out.println(grammarHM);
     grammarHM = toObjects(tdl, grammarHM);
 
     Set set = grammarHM.entrySet();
     
-    Iterator iter = set.iterator();
-    while (iter.hasNext())  {
-      Map.Entry g = (Map.Entry)iter.next();
-      System.out.println("Objects:\nKey: " + g.getKey() + " Value: " + g.getValue());
-    }
+    // Iterator iter = set.iterator();
+    // while (iter.hasNext())  {
+    //   Map.Entry g = (Map.Entry)iter.next();
+    //   System.out.println("Objects:\nKey: " + g.getKey() + " Value: " + g.getValue());
+    // }
 
-    System.out.println();
-    for(Iterator<TypedDependency> i = tdl.iterator(); i.hasNext();) {
-        System.out.println(i.next());
-    }
+    // System.out.println();
+    // for(Iterator<TypedDependency> i = tdl.iterator(); i.hasNext();) {
+    //    // System.out.println(i.next());
+    // }
 
     
 
@@ -206,6 +211,12 @@ class LexParserObj {
   
 
   public HashMap toObjects(List<TypedDependency> allDeps, HashMap grammar)  {
+
+
+    /*
+      removing apostrophes from I've etc....sort this out?
+    */
+
 
     HashMap objects = new HashMap();
     TypedDependency dependency;
@@ -219,24 +230,31 @@ class LexParserObj {
       dependency = i.next();
       //System.out.println(dependency);
       relation = dependency.reln().toString();
+     
       gram = null;
 
       //can use or's on these two for further relations, first if statement is for ones needing .gov() second is for .dep()
       if (relation.contains("prep")) {
-        gram = (String)grammar.get(dependency.dep().toString());
+       
         word = dependency.dep().toString();
+        word = word.replaceAll("'$", "");
+        gram = (String)grammar.get(word);
+
+        word = word.replaceAll("-[0-9]*$", "");
+        word = word.replaceAll("[^a-zA-Z0-9]", ""); 
         gram = gram.replaceAll("-[0-9]*$", "");
         gram = gram.replaceAll("[^a-zA-Z0-9]", "");
-        word = word.replaceAll("-[0-9]*$", "");
-        word = word.replaceAll("[^a-zA-Z0-9]", "");
-        objects.put(word, gram);
+          
+          objects.put(word, gram);
       }
      
 
       if (relation.contains("obj")) {
      
-        gram = (String)grammar.get(dependency.dep().toString());
         word = dependency.dep().toString();
+        word = word.replaceAll("'$", "");
+        gram = (String)grammar.get(word);
+
         gram = gram.replaceAll("-[0-9]*$", "");
         gram = gram.replaceAll("[^a-zA-Z0-9]", "");
         word = word.replaceAll("-[0-9]*$", "");
@@ -252,9 +270,12 @@ class LexParserObj {
 
       //not sure if subject is so important
       if (relation.contains("subj")) {
-     
-        gram = (String)grammar.get(dependency.dep().toString());
+      
         word = dependency.dep().toString();
+
+        word = word.replaceAll("'$", "");
+        gram = (String)grammar.get(word);
+
         gram = gram.replaceAll("-[0-9]*$", "");
         gram = gram.replaceAll("[^a-zA-Z0-9]", "");
         word = word.replaceAll("-[0-9]*$", "");
@@ -269,8 +290,10 @@ class LexParserObj {
       }
 
       if (relation.contains("aux")) {
-        gram = (String)grammar.get(dependency.gov().toString());
+
         word = dependency.gov().toString();
+        word = word.replaceAll("'$", "");
+        gram = (String)grammar.get(word);
         gram = gram.replaceAll("-[0-9]*$", "");
         gram = gram.replaceAll("[^a-zA-Z0-9]", "");
         word = word.replaceAll("-[0-9]*$", "");
@@ -283,7 +306,9 @@ class LexParserObj {
         //word is. So need ot find out if it's already in objects (subject to ordering!!! :s)
         String word1 = dependency.dep().toString();
         word = dependency.gov().toString();
-        gram = (String)grammar.get(dependency.gov().toString());
+        word = word.replaceAll("'$", "");
+        word1 = word1.replaceAll("'$", "");
+        gram = (String)grammar.get(word);
         
         gram = gram.replaceAll("-[0-9]*$", "");
         gram = gram.replaceAll("[^a-zA-Z0-9]", "");
