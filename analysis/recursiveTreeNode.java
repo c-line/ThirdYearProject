@@ -14,35 +14,35 @@ import edu.mit.jwi.item.POS;
 import edu.mit.jwi.item.Pointer;
 import edu.mit.jwi.*;
 
-public class hypernymTreeNode	{
+public class recursiveTreeNode	{
 	
-	public List<hypernymTreeNode> hypernymArray;
-	public List<hypernymTreeNode> hyponymArray;
+	public List<recursiveTreeNode> hypernymArray;
+	public List<recursiveTreeNode> hyponymArray;
 	public String grammar;
 	public ISynsetID synsetID;
-	public boolean attached;
+	public int heuristic;
 
-	public hypernymTreeNode(String gram, ISynsetID sID, hypernymTreeNode hyponym)	{
+	public recursiveTreeNode(String gram, ISynsetID sID, recursiveTreeNode hyponym)	{
 
 		grammar = gram;
-		hypernymArray = new ArrayList<hypernymTreeNode>();
-		hyponymArray = new ArrayList<hypernymTreeNode>();
+		hypernymArray = new ArrayList<recursiveTreeNode>();
+		hyponymArray = new ArrayList<recursiveTreeNode>();
 		if (hyponym != null)	{
 			hyponymArray.add(hyponym);
 		}
 		synsetID = sID;
-		attached = false;
+		heuristic = 1;
 
 	}
 
-	public void addHypernym(hypernymTreeNode hypernym)	{
+	public void addHypernym(recursiveTreeNode hypernym)	{
 		//check if that word id is already there?
 		//this just puts a reference to the node in this array. Node is also in tree
 		hypernymArray.add(hypernym);
 
 	}
 
-	public List<hypernymTreeNode> getHypernyms()	{
+	public List<recursiveTreeNode> getHypernyms()	{
 		return hypernymArray;
 	}
 
@@ -54,19 +54,20 @@ public class hypernymTreeNode	{
 		return grammar;
 	}
 
-	public void setAttached()	{
-		this.attached = true;
+	public void setHeuristic(int h)	{
+		//potentially need to give it the value to set
+		this.heuristic = h;
 	}
 
-	public boolean getAttached()	{
-		return this.attached;
+	public int getHeuristic()	{
+		return this.heuristic;
 	}
 
-	public void addHyponym(hypernymTreeNode toAdd)	{
+	public void addHyponym(recursiveTreeNode toAdd)	{
 		hyponymArray.add(toAdd);
 	}
 	
-	public List<hypernymTreeNode> getHyponyms()	{
+	public List<recursiveTreeNode> getHyponyms()	{
 		return hyponymArray;
 	}
 

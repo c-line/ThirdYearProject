@@ -14,39 +14,45 @@ import edu.mit.jwi.item.POS;
 import edu.mit.jwi.item.Pointer;
 import edu.mit.jwi.*;
 
-public class hypernymTree	{
+public class recursiveTree	{
 
-	public List<hypernymTreeNode> nodes;
-	public hypernymTreeNode category;
+	public List<recursiveTreeNode> nodes;
+	public recursiveTreeNode category;
 	public IDictionary dict;
 	/*
 	To find common ground, when branches merge into tree. At what node merges them all
 	*/
 
-	public hypernymTree(IDictionary dictionary)	{
-		nodes = new ArrayList<hypernymTreeNode>();
-		category = null;
+	public recursiveTree(IDictionary dictionary)	{
+		nodes = new ArrayList<recursiveTreeNode>();
 		dict = dictionary;
 	}
 
 
-	public hypernymTreeNode addNode(String gram, ISynsetID hypSynID, hypernymTreeNode current)	{
+	public recursiveTreeNode addNode(String gram, ISynsetID hypSynID, recursiveTreeNode current)	{
 		
-		//need to check if node already exists
-		if(isNode(hypSynID)==null)	{
+		recursiveTreeNode newNode = null;
+		//if node does NOT exist
+		if(isNode(hypSynID) == null)	{
 			//System.out.println("Adding node to tree: " + word.getLemma());
 			
-			hypernymTreeNode newNode = new hypernymTreeNode(gram, hypSynID, current);
+			newNode = new recursiveTreeNode(gram, hypSynID, current);
 			nodes.add(newNode);
-
-			return newNode;
+			
 		}
-		return null;
+		else	{
+			//node exists, 
+			//still need to update heuristics
+			//
+		}
+
+
+		return newNode;
 	}
 
-	public hypernymTreeNode addHypernym(hypernymTreeNode node, String gram, ISynsetID hypSynID)	{
+	public recursiveTreeNode addHypernym(recursiveTreeNode node, String gram, ISynsetID hypSynID)	{
 		//check if node already exists
-		hypernymTreeNode hypernymNode = isNode(hypSynID);
+		recursiveTreeNode hypernymNode = isNode(hypSynID);
 
 		//if not, 
 		if (hypernymNode == null)	{
@@ -64,25 +70,30 @@ public class hypernymTree	{
 			node.addHypernym(hypernymNode);
 			hypernymNode.addHyponym(node);
 			//might need to be sure it's not joing up with it's own branch of the tree
-			node.setAttached();
-			return hypernymNode;
+			//attached can only be set if it's joining the main tree. 
+			//only set attached when joining a node whose getAttached == true
+
+			if (hypernymNode.heuristic != 1)	{
+				//node.setHeuristic(hypernymNode.getHeuristic() - 1);
+			}
+			
 			
 		}
 
 		return hypernymNode;
 	}
 
-	public void addHyponym(hypernymTreeNode hypernym, hypernymTreeNode current)	{
+	public void addHyponym(recursiveTreeNode hypernym, recursiveTreeNode current)	{
 		//add the current node as hyponym to the hypernym
 		hypernym.addHyponym(current);
 	}
 
-	public hypernymTreeNode isNode(ISynsetID id)	{
+	public recursiveTreeNode isNode(ISynsetID id)	{
 		/*
 		Check if the node already exists in this branch
 		*/
-		hypernymTreeNode checking;
-		for (Iterator<hypernymTreeNode> toCheck = nodes.listIterator(); toCheck.hasNext();)	{
+		recursiveTreeNode checking;
+		for (Iterator<recursiveTreeNode> toCheck = nodes.listIterator(); toCheck.hasNext();)	{
 			checking = toCheck.next();
 			if (checking.getSynsetID().equals(id))	{
 				return checking;
@@ -92,18 +103,21 @@ public class hypernymTree	{
 	}
 	
 
-	public List<hypernymTreeNode> getNodes()	{
+	public List<recursiveTreeNode> getNodes()	{
 		return nodes;
 	}
+
+	
+	
 
 	public void printTree()	{
 		
 		List<IWord> words = new ArrayList();
-		hypernymTreeNode print;
+		recursiveTreeNode print;
 		ISynset synset;
 		IWord word;
 
-		for (Iterator<hypernymTreeNode> toPrint = nodes.listIterator(); toPrint.hasNext();)	{
+		for (Iterator<recursiveTreeNode> toPrint = nodes.listIterator(); toPrint.hasNext();)	{
 			print = toPrint.next();
 			synset = dict.getSynset(print.getSynsetID());
 			words = synset.getWords();

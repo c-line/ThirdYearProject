@@ -8,6 +8,7 @@ import edu.mit.jwi.Dictionary;
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.IIndexWord;
 import edu.mit.jwi.item.ISynset;
+import edu.mit.jwi.item.SynsetID;
 import edu.mit.jwi.item.ISynsetID;
 import edu.mit.jwi.item.IWord;
 import edu.mit.jwi.item.IWordID;
@@ -123,22 +124,12 @@ public class KeywordReduction	{
 
       stmt.close();
 
-      /*
-      building a table of keywords in the database:
-
-      iterate through all tweets
-      run the lexparserobj on it, 
-      put the words in the database
-          search if word already there
-          if not then add. 
-          for optimising, should add in alphabetical order to database, seraching then quicker
-      also add the key word to a list that gets added as a separate column to original_tweets
-      (saves doing the parsing again)
-      */
-
+      stmt = conn.createStatement();
+      res = stmt.executeUpdate("ALTER TABLE original_tweets ADD column keywords varchar(200)");
+      //ALTER TABLE original_tweets DROP keywords
       
-      //set up the lexparser
-      LexParserObj lpo = new LexParserObj();
+      
+     
 
       //set up the wordnet environment
       String wnhome = System.getenv("WNHOME");
@@ -158,6 +149,11 @@ public class KeywordReduction	{
       System.out.println(ex.toString());
       System.out.println("Could not find dictionary");
     }
+
+     //set up the lexparser
+      LexParserObj lpo = new LexParserObj();
+
+
       /*
       get lpo to send objects
       put them in database apporpriately
@@ -165,79 +161,114 @@ public class KeywordReduction	{
       */
 
       stmt = conn.createStatement();
-      ResultSet rs = stmt.executeQuery("select text from thirdyearproject.original_tweets;");
+      ResultSet rs = stmt.executeQuery("select text, tweet_ID from thirdyearproject.original_tweets;");
       
       HashMap keywordsHM = new HashMap();
       String result;
       String currentWord;
       String gram;
+      String analysis;
       Statement stmt2 = conn.createStatement();
-      ResultSet rs2;
+      Statement stmt3 = conn.createStatement();
+      int rs2;
+      int rs3;
+      //SingleTweetAnalysis analyser = new SingleTweetAnalysis();
+      ArrayList<HashMap> allHMDefinitions;
+      HashMap definitionsHM = new HashMap();
 
-      int counter = 50;
+      int counter = 0;
 
+    
        //*This while loop will get all the results
         while (rs.next())  {
+          allHMDefinitions = new ArrayList();
+          if (counter < 150) {
           // counter--;
           // if (counter == 0) {
           //   break;
           // }
+          counter++;
+          System.out.println(counter);
 
          result = rs.getString("text");
-         result = result.replaceAll("(#)[^ ]*|(http:)[^ ]*", "");
-         System.out.println("tweet" + result);
+         analysis = result.replaceAll("(#)[^ ]*|(http:)[^ ]*", "");
          //idiot proofing for empty tweets. (Trim just incase some white space in empty tweet)
-         while (result.matches("^[ ]*$")) {
+         while (analysis.matches("^[ ]*$")) {
             rs.next();
             result = rs.getString("text");
-            result = result.replaceAll("(#)[^ ]*|(http:)[^ ]*", "");
+            analysis = result.replaceAll("(#)[^ ]*|(http:)[^ ]*", "");
          }
-         //if (result.contains("frothsof 4e: Trimming the Fat Part 4: Killing Off Revenants Once and for All http://t.co/gu2yAKEALr #dnd")) {
-            keywordsHM = lpo.demoAPI(result);
+          //  System.out.println(analysis);
+
+            keywordsHM = lpo.demoAPI(analysis);
             Set set = keywordsHM.entrySet();
             
            Iterator iter = set.iterator();
+           String keywordsString = "";
            while (iter.hasNext())  {
+
              // word = iter.next();
               Map.Entry g = (Map.Entry)iter.next();
               currentWord = g.getKey().toString();
               gram = g.getValue().toString();
-              getDefinitions(dict, conn, currentWord, gram);
-         // }
+
+              //System.out.println(currentWord);
+              definitionsHM = getDefinitions(dict, conn, currentWord, gram);
+             // System.out.println("It's HM is: " + definitionsHM);
+              if (definitionsHM!=null)  {
+                //only add words that were found in wordnet, so not null
+                allHMDefinitions.add(definitionsHM); 
+              }
+              
+              keywordsString = keywordsString + currentWord + ";";//when extracting from original tweets can then split on the ;
               /*
                 for all the possible keyword defintions, assess which is likely the 
                 definition in this tweets context
+             */
+           }
 
 
-              */
-           } 
-        }
-  
+            //System.out.println("Sending to contextChooser " + allHMDefinitions);
+            //keywordsHM is null if coudln't find a category
+          if (allHMDefinitions.size() > 0)  {
+             keywordsHM = contextChooser(allHMDefinitions);
+          }
+         
+          // System.out.println(keywordsHM);
 
-        // for ONE tweet      
-        // if (rs.next())  {
-        //     result = rs.getString("text");
-        //     keywordsHM = lpo.demoAPI(result);
-        //     Set set = keywordsHM.entrySet();
-            
-        //    Iterator iter = set.iterator();
-        //    while (iter.hasNext())  {
-        //      // word = iter.next();
-        //       Map.Entry g = (Map.Entry)iter.next();
-        //       currentWord = g.getKey().toString();
-        //       gram = g.getValue().toString();
-        //       getDefinitions(dict, conn, currentWord, gram);
+           if (keywordsHM != null)  {
+              set = keywordsHM.entrySet();
               
-        //    }
-        //  }
+              Iterator itr = set.iterator();
+              while (itr.hasNext())  {
+                Map.Entry gg = (Map.Entry)itr.next();
+                String synID = gg.getKey().toString();
+                rs3 = stmt3.executeUpdate("UPDATE keywords SET confidence = confidence + 1 WHERE synsetID = \"" + synID + "\";");
+              }
+          
+           }
+           
+          long tweetID = rs.getLong("tweet_ID");
 
-        //getDefinitions(dict, conn, "sweet", "NN");
+          rs2 = stmt2.executeUpdate("UPDATE original_tweets SET keywords = \"" + keywordsString + "\" WHERE tweet_ID=" + Long.toString(tweetID) + ";");
+         }//if counter <100
 
-          System.out.println(keywordsHM);
-       
+        }
 
-        // System.out.println("\n\n" + keywordsHM);
+        
         stmt.close();
+        stmt2.close();
+        stmt3.close();
+        rs.close();
+        //rs2 and 3 were ints not ResultSet so don't need closing 
+
+        /*
+        From here, need to cut off certain definitions
+        For now, just cutting definitions which never got used (confidence = 0)
+        */
+
+        stmt = conn.createStatement();
+        rs2 = stmt.executeUpdate("DELETE FROM keywords WHERE confidence = 0;");
 
 
     }
@@ -248,7 +279,9 @@ public class KeywordReduction	{
   }
 
 
-  public static void getDefinitions(IDictionary dict, Connection conn, String word, String gram)  {
+  public static HashMap getDefinitions(IDictionary dict, Connection conn, String word, String gram)  {
+
+    HashMap definitionsHM = new HashMap();
 
     POS pos = null;
     try {
@@ -265,7 +298,7 @@ public class KeywordReduction	{
         pos = POS.VERB;
       }
       else  {
-        return;
+        return null;
       }
     }catch(Exception e)  {
       e.printStackTrace();
@@ -273,12 +306,13 @@ public class KeywordReduction	{
     
     try{
        
+       //stem words here!!!!
         IIndexWord idxWord = dict.getIndexWord(word, pos);
         if (idxWord == null)  {
-          return;
+          return null;
         }
 
-        System.out.println("Getting definitions for: " + word);
+       // System.out.println("Getting definitions for: " + word);
         List<IWordID> definitions = idxWord.getWordIDs();
         IWordID wordID = null;
         String query = "";
@@ -292,7 +326,8 @@ public class KeywordReduction	{
             stmt = conn.createStatement();
             wordID = iter.next();
             synsetID = wordID.getSynsetID();
-      
+            
+            definitionsHM.put(synsetID.toString(), gram);
             query = "insert into keywords values(\"" + wordID.toString() + "\", \"" + synsetID.toString() + "\", \"" + word + "\", \"" + gram + "\", " + "0);";
             rs = stmt.executeUpdate(query);
             stmt.close();
@@ -306,8 +341,121 @@ public class KeywordReduction	{
     after all keywords are in database need to assess context for each
 
     */
-  
+    return definitionsHM;
 
 
   }
-}
+
+
+  public static HashMap contextChooser(ArrayList<HashMap> allHMDefinitions)  {
+
+    //System.out.println("There are: " + Integer.toString(allHMDefinitions.size()) + " keyword Hashmaps");
+
+
+
+    HashMap solution = new HashMap();
+    solution = recursion(solution, allHMDefinitions, 0);  //initially passing solution is fine because empty array list adn that won't change, avoids declaring new HashMap 
+    if (solution.isEmpty()==true) {
+      //System.out.println("Fudge");
+    }
+    else  {
+    //  System.out.println("HELL YES!!!!\n\n\n\n");
+      return solution;
+      }
+    System.gc(); 
+    return null;  
+
+  }//ends contextChooser
+
+  public static HashMap recursion(HashMap args, ArrayList<HashMap> list, int i) {
+
+
+    /*
+    this may not need to be done for all tweets
+    need to consider if words like "this, it, all" etc make it trhough. Won't be part of classification
+
+    */
+
+    // System.out.println(list);
+    // System.out.println(Integer.toString(i));
+    HashMap currentHM = list.get(i);
+    //System.out.println(currentHM);
+    Set set = currentHM.entrySet();
+    Iterator iter = set.iterator();
+
+    String synsetIDString = null;
+    ISynsetID synsetID = null;
+    String gram = null;
+
+    HashMap solution = new HashMap();
+
+    Boolean found = false;
+
+     //iterate through words and grams in currentHM
+     while (iter.hasNext()) {
+
+
+        Map.Entry mp = (Map.Entry)iter.next();
+        synsetIDString = mp.getKey().toString(); //convert to datastructure SynsetID
+        gram = mp.getValue().toString();
+
+        args.put(synsetIDString, gram); //add something to args before sending it off     
+
+        if (i == list.size()-1) {
+            // System.out.println("\n\n\n");
+            // System.out.println("args: " + args);
+            //this step only important once have all words
+            // synsetIDString = parseSynsetID(synsetIDString);
+            SingleTweetAnalysis sta = new SingleTweetAnalysis();
+            try {
+              found = sta.start(args);
+            }catch(Exception e) {
+              e.printStackTrace();
+            }
+            
+            if (found == true)  {
+              return args;
+            }
+
+             
+        }
+
+        else  {
+        
+          i = i+1;  //indexing the next HashMap
+          solution = recursion(args, list, i);
+
+          i = i-1;//return i to the value for this level
+
+          if (solution.isEmpty() == false)  { 
+            return solution;  //pass correct hashmap back up
+            //allows return through all loops
+          }
+         
+        }
+      args.remove(mp.getKey());//remove that word from args ready to put the new def in
+     }//ends iterator for current HashMap
+    return solution;
+      
+  }
+
+}//ends class
+
+/*
+
+
+
+
+
+
+love the space
+
+
+
+
+
+
+
+
+
+*/

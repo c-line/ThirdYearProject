@@ -1,6 +1,10 @@
 
 import java.io.StringReader;
 import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import edu.stanford.nlp.process.TokenizerFactory;
 import edu.stanford.nlp.process.CoreLabelTokenFactory;
@@ -12,6 +16,17 @@ import edu.stanford.nlp.ling.Sentence;
 import edu.stanford.nlp.trees.*;
 import edu.stanford.nlp.ling.Label;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
+
+import edu.mit.jwi.Dictionary;
+import edu.mit.jwi.IDictionary;
+import edu.mit.jwi.item.IIndexWord;
+import edu.mit.jwi.item.ISynset;
+import edu.mit.jwi.item.ISynsetID;
+import edu.mit.jwi.item.IWord;
+import edu.mit.jwi.item.IWordID;
+import edu.mit.jwi.item.POS;
+import edu.mit.jwi.morph.SimpleStemmer;
+import edu.mit.jwi.morph.IStemmer;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -30,100 +45,68 @@ class LexParserObj {
    */
 
   public LexicalizedParser lp;
+  public IDictionary dict;
 
   public LexParserObj() {
      lp = LexicalizedParser.loadModel("edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz");
-
-  }
-
-  public HashMap getTweetsFromDB() {
-   // LexicalizedParser lp = LexicalizedParser.loadModel("edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz");
     
-
-        //GetTweets from database
-        Connection conn = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        String result = "heaven";
-        HashMap grammarHM = new HashMap();
-       
-
-          try {
-              // The newInstance() call is a work around for some
-              // broken Java implementations
-
-              Class.forName("com.mysql.jdbc.Driver").newInstance();
-          }catch (Exception ex) {
-              // handle the error
-          }
-
-          try {
-            conn = DriverManager.getConnection("jdbc:mysql://localhost/thirdyearproject?user=root&password=");
-          }catch (SQLException ex) {
-          // handle any errors
-          System.out.println("SQLException: " + ex.getMessage());
-          System.out.println("SQLState: " + ex.getSQLState());
-          System.out.println("VendorError: " + ex.getErrorCode());
-          }
-
-      try {
-              stmt = conn.createStatement();
-              rs = stmt.executeQuery("SELECT text FROM thirdyearproject.original_tweets where user_ID=72109014");
-
-              //*This while loop will get all the results
-              // while (rs.next())  {
-              //   result = rs.getString("text");
-              //   String[] resultArray = result.split(" ");
-              //   System.out.println(result);
-              //   demoAPI(lp, resultArray);
-              // }
-
-              //*This one get the top row
-              if(rs.next()) {
-                rs.next();
-                result = rs.getString("text");
-               // result = "I love receiving sweets. They are as cool as chocolate";
-                result = "There are so many chocolates and sweets";
-                System.out.println(result);
-                grammarHM = demoAPI(result);
-               }
-
-              //don't forget to close any statements
-              //and close the connection
-              stmt.close();
-              conn.close();
-      }
-      catch (SQLException ex) {
-              System.out.println("SQLException: " + ex.getMessage());
-              System.out.println("SQLState: " + ex.getSQLState());
-              System.out.println("VendorError: " + ex.getErrorCode());
-      }
-      finally {
-          // it is a good idea to release
-          // resources in a finally{} block
-          // in reverse-order of their creation
-          // if they are no-longer needed
-          if (rs != null) {
-                    try {
-                        rs.close();
-                    }catch (SQLException sqlEx) {
-                      // ignore
-                    } 
-                    rs = null;
-          }
-          if (stmt != null) {
-                    try {
-                        stmt.close();
-                    }catch (SQLException sqlEx) { 
-                      //ignore
-                    } 
-                    stmt = null;
-          }
-      }
-
-    return grammarHM;
-
+    
   }
+
+
+
+  public String wordStems(String original, String gram)  {
+   //need to use IStemmer get the stem of words such as plurals
+   //also use this method to get verb, adj, adv, or noun
+
+   IStemmer stemmer = new SimpleStemmer();
+   List<String> stems = new ArrayList();
+   IIndexWord idxWord;
+   POS pos = null;
+   String possibility;
+
+   if (gram.charAt(0)=='N')  {
+     pos = POS.NOUN;
+   }
+   else if (gram.charAt(0)=='J')  {
+     pos = POS.ADJECTIVE;
+   }
+   else if (gram.charAt(0)=='R') {
+     pos = POS.ADVERB;
+   }
+   else if (gram.charAt(0)=='V') {
+     pos = POS.VERB;
+   }
+   else {
+
+   }
+
+   //System.out.println("In words stems with: " + original + " gram: " + gram);
+
+  if (original.matches("^[ ]*$")) {
+    return null;
+  }
+  else  {
+    stems = stemmer.findStems(original, pos);
+   if (stems.size() > 0) {
+     for (Iterator<String> toSearch = stems.listIterator(); toSearch.hasNext();) {
+        possibility = toSearch.next();
+        idxWord = dict.getIndexWord(possibility, pos);
+        if (idxWord != null)  {
+          return possibility;
+        }
+     }
+   }
+  }
+   
+  
+   //this gets executed if no stems were found, or stems found had no definition in dictionary
+   return original;
+        
+  }
+
+
+
 
 
   /**
@@ -139,12 +122,20 @@ class LexParserObj {
     // This option shows parsing a list of correctly tokenized words
     //String[] sent = { "This", "is", "an", "easy", "sentence", "." };
 
+    String wnhome = System.getenv("WNHOME");
+    String path = wnhome + File.separator + "dict";
     
+
+    try{
+      URL url = new URL("file", null, path);
+      dict = new Dictionary(url);
+      dict.open();
+    }catch (Exception e) {  
+               e.printStackTrace();  
+    }  
+
+
     String[] words = sentence.split(" ");
-     System.out.println("sentence: " + sentence);
-
-    List<String> wordsAndTags = new ArrayList<String>(); 
-
 
 
     List<CoreLabel> rawWords = Sentence.toCoreLabelList(words);
@@ -187,7 +178,7 @@ class LexParserObj {
      //where node is a leaf, it's parent is it's label
     }
 
-    System.out.println(grammarHM);
+    //System.out.println(grammarHM);
     grammarHM = toObjects(tdl, grammarHM);
 
     Set set = grammarHM.entrySet();
@@ -203,8 +194,7 @@ class LexParserObj {
     //    // System.out.println(i.next());
     // }
 
-    
-
+    dict.close();
    return grammarHM;
   }
 
@@ -223,7 +213,7 @@ class LexParserObj {
     String relation;
     String word;
     String gram = null;
-
+    String[] cleaned = new String[2];
 
     for(Iterator<TypedDependency> i = allDeps.iterator(); i.hasNext();) {
 
@@ -237,34 +227,42 @@ class LexParserObj {
       if (relation.contains("prep")) {
        
         word = dependency.dep().toString();
-        word = word.replaceAll("'$", "");
         gram = (String)grammar.get(word);
 
-        word = word.replaceAll("-[0-9]*$", "");
-        word = word.replaceAll("[^a-zA-Z0-9]", ""); 
-        gram = gram.replaceAll("-[0-9]*$", "");
-        gram = gram.replaceAll("[^a-zA-Z0-9]", "");
-          
+        word = cleanText(word, gram);
+        if (word == null)  {
+
+        }
+        else  {
+          cleaned = word.split(";");
+          word = cleaned[0];
+          gram = cleaned[1];
+          //word = wordStems(word, gram);
           objects.put(word, gram);
+        }
+      
       }
      
 
       if (relation.contains("obj")) {
      
         word = dependency.dep().toString();
-        word = word.replaceAll("'$", "");
         gram = (String)grammar.get(word);
+       
+        word = cleanText(word, gram);
+        if (word == null)  {
 
-        gram = gram.replaceAll("-[0-9]*$", "");
-        gram = gram.replaceAll("[^a-zA-Z0-9]", "");
-        word = word.replaceAll("-[0-9]*$", "");
-        word = word.replaceAll("[^a-zA-Z0-9]", "");
-        objects.put(word, gram);
-        if (word.equals("me")) {
-          //don't want I during dynamic categorising, completely dependent on context
         }
         else  {
-          objects.put(word, gram);
+           cleaned = word.split(";");
+          word = cleaned[0];
+          gram = cleaned[1];
+          if (word.equals("me")) {
+            //don't want I during dynamic categorising, completely dependent on context
+          }
+          else  {
+            objects.put(word, gram);
+          }
         }
       }
 
@@ -272,76 +270,117 @@ class LexParserObj {
       if (relation.contains("subj")) {
       
         word = dependency.dep().toString();
-
-        word = word.replaceAll("'$", "");
         gram = (String)grammar.get(word);
 
-        gram = gram.replaceAll("-[0-9]*$", "");
-        gram = gram.replaceAll("[^a-zA-Z0-9]", "");
-        word = word.replaceAll("-[0-9]*$", "");
-        word = word.replaceAll("[^a-zA-Z0-9]", "");
-        if (word.equals("I")) {
-          //don't want I during dynamic categorising, completely dependent on context
+        word = cleanText(word, gram);
+        if (word == null)  {
+
         }
         else  {
+          cleaned = word.split(";");
+          word = cleaned[0];
+          gram = cleaned[1];
+          if (word.equals("I")) {
+            //don't want I during dynamic categorising, completely dependent on context
+          }
+          else  {
+            objects.put(word, gram);
+          }
+        }
+      }
+      
+
+      if (relation.contains("aux")) {
+        word = dependency.gov().toString();
+        gram = (String)grammar.get(word);
+     
+        word = cleanText(word, gram);
+        if (word == null)  {
+
+        }
+        else  {
+          cleaned = word.split(";");
+          word = cleaned[0];
+          gram = cleaned[1];
+          //word = wordStems(word, gram);
           objects.put(word, gram);
         }
         
-      }
-
-      if (relation.contains("aux")) {
-
-        word = dependency.gov().toString();
-        word = word.replaceAll("'$", "");
-        gram = (String)grammar.get(word);
-        gram = gram.replaceAll("-[0-9]*$", "");
-        gram = gram.replaceAll("[^a-zA-Z0-9]", "");
-        word = word.replaceAll("-[0-9]*$", "");
-        word = word.replaceAll("[^a-zA-Z0-9]", "");
-        objects.put(word, gram);
+        
       }
 
        if (relation.equals("conj_and")) {
+        String[] cleaned2 = new String[2];
         //intersted in this if the other side of the and was deemed an object to send, because then the other 
         //word is. So need ot find out if it's already in objects (subject to ordering!!! :s)
         String word1 = dependency.dep().toString();
         word = dependency.gov().toString();
-        word = word.replaceAll("'$", "");
-        word1 = word1.replaceAll("'$", "");
         gram = (String)grammar.get(word);
+          
+
+          
+      //we are only adding the new conj_and word to objects if it's and partner is in there
+
+       word = cleanText(word, gram);
+       word1 = cleanText(word1, gram);
         
-        gram = gram.replaceAll("-[0-9]*$", "");
-        gram = gram.replaceAll("[^a-zA-Z0-9]", "");
+        if (word == null)  {
 
-        word = word.replaceAll("-[0-9]*$", "");
-        word = word.replaceAll("[^a-zA-Z0-9]", "");
+        }
+        else if (word1 == null)  {
 
-        word1 = word1.replaceAll("-[0-9]*$", "");
-        word1 = word1.replaceAll("[^a-zA-Z0-9]", "");
-        //we are only adding the new conj_and word to objects if it's and partner is in there
-        if (objects.containsKey(word) == true) {
-          //if word was in there, add word1
-           objects.put(word1, gram);
         }
-        else if (objects.containsKey(word1) == true) {
-          //if word1 was in there, add word
-           objects.put(word, gram);
+        else  {
+          cleaned = word.split(";");
+          cleaned2 = word1.split(";");
+          word = cleaned[0];
+          gram = cleaned[1];
+          word1 = cleaned2[0];
+          //word = wordStems(word, gram);
+          //objects.put(word, gram);
+           if (objects.containsKey(word) == true) {
+              //if word was in there, add word1
+               objects.put(word1, gram);
+            }
+            else if (objects.containsKey(word1) == true) {
+              //if word1 was in there, add word
+               objects.put(word, gram);
+            }
         }
-       
+         
       }
-
     }//ends iterator
-
-
     return objects;
   }
 
-  public String cleanText(String cleaning) {
+  public String cleanText(String cleaning, String gram) {
 
+
+    if (gram.charAt(0) == 'N' || gram.charAt(0) == 'J' || gram.charAt(0) == 'V' || gram.charAt(0) == 'R') {
+      //System.out.println("Given: " + cleaning + " " + gram);
+
+      cleaning = cleaning.replaceAll("'$", "");
       cleaning = cleaning.replaceAll("-[0-9]*$", "");
       //cleaning the word of punctuation and numbers that will cause faults in the dictionary
       cleaning = cleaning.replaceAll("[^a-zA-Z0-9]", "");
-      return cleaning;
+      gram = gram.replaceAll("-[0-9]*$", "");
+      gram = gram.replaceAll("[^a-zA-Z0-9]", "");
+      
+     // System.out.println("Sending to stemmer: " + cleaning + " " + gram);
+      cleaning = wordStems(cleaning, gram);
+
+      if (cleaning == null) {
+        return null;
+      }
+   // System.out.println("Returning: " + cleaning + " " + gram);
+      return cleaning + ";" + gram;
+
+    }
+    else {
+      return null;
+    }
+
+      
   }
 
  
